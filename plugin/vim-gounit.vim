@@ -14,7 +14,7 @@ function! s:Tests() range
     for lineno in range(a:firstline, a:lastline)
         let funcName = matchstr(getline(lineno), '^func\s*\(([^)]\+)\)\=\s*\zs\w\+\ze(')
         if funcName != ''
-            let funcLine = lineno)
+            let funcLine = lineno
         endif
     endfor
     if funcLine == 0
@@ -25,7 +25,11 @@ function! s:Tests() range
 
     let file = expand('%')
     let out = system(bin . ' -l ' . shellescape(funcLine) . ' -i ' . shellescape(file))
-    echom 'gounit-vim: ' . out
+    if out != ''
+      echom 'gounit-vim: ' . out
+    else
+      echom 'gounit-vim: test successfully generated'
+    endif
 endfunction
 
 command! -range GoUnit <line1>,<line2>call s:Tests()
