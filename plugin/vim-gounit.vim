@@ -24,7 +24,7 @@ function! s:Tests() range
 
 
     let file = expand('%')
-    let out = system(bin . ' -l ' . shellescape(funcLine) . ' -i ' . shellescape(file))
+    let out = system(bin . ' gen -l ' . shellescape(funcLine) . ' -i ' . shellescape(file))
     if out != ''
       echom 'gounit-vim: ' . out
     else
