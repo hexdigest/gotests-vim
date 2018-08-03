@@ -157,7 +157,7 @@ if !exists('g:gounit_bin')
     let g:gounit_bin = 'gounit'
 endif
 
-function! s:Tests() range
+function! s:Tests(...) range
     let bin = g:gounit_bin
     if !executable(bin)
         echom 'gounit-vim: gounit binary not found.'
@@ -176,6 +176,25 @@ function! s:Tests() range
         return
     endif
 
+    " check if arguments were passed
+    " then checks if template exsits
+    " if everything is ok then template is being changed
+    " and next time GoUnit is used it will be used
+    if a:0
+      let l:res = ParseTemplResult()
+      let l:count = 0
+      for i in l:res
+        if i == a:1
+          let l:count += 1
+        endif
+      endfor
+      if !l:count
+        echo 'error no such template'
+        return -1
+      endif
+      " runs a gounit command with a given template
+      call system(s:plugin_name . ' template use ' . a:1)
+    endif
 
     let file = expand('%')
     let out = system(bin . ' gen -l ' . shellescape(funcLine) . ' -i ' . shellescape(file))
@@ -186,5 +205,52 @@ function! s:Tests() range
     endif
 endfunction
 
-command! -range GoUnit <line1>,<line2>call s:Tests()
+" command! -range GoUnit <line1>,<line2>call s:Tests()
 command! GoUnitInstallBinaries call s:GoUnitInstall()
+
+
+" parsing result of a command template list
+" to find out what templates we can use
+" and return them as an array
+function! ParseTemplResult(...)
+  let l:templates = system(s:plugin_name . ' template list')
+  let l:templates = split(l:templates, '\n')[1:]
+  let l:result = []
+  for i in l:templates
+    if !len(i)
+      continue
+    endif
+    for j in split(i, ' ')
+      if j == '*' || j == ''
+        continue
+      endif
+      let l:result = add(l:result, j)
+    endfor
+  endfor
+  return l:result
+endfunction
+
+" defines new command with autocomplete functionlist
+function! TemplateCommands()
+  let l:result = ParseTemplResult()
+  command! -range -nargs=? -complete=customlist,ParseTemplResult GoUnit <line1>,<line2>call s:Tests(<f-args>)
+endfunction
+
+
+" function checks all binaries and after that calls other init functions
+" for gounit plugin
+function! GoUnitInit()
+  let s:plugin_name = 'gounit'
+	if !executable('go')
+		echohl Error | echomsg "go executable not found." | echohl None
+		return -1
+	endif
+  if !executable('gounit')
+		echohl Error | echomsg "gounit is not installed" | echohl None
+    return -1
+  endif
+
+  call TemplateCommands()
+endfunction
+
+call GoUnitInit()
