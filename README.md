@@ -4,7 +4,7 @@ Vim plugin for [gounit](https://github.com/hexdigest/gounit) tool, that allows y
 
 ## Demo
 
-[![asciicast](https://asciinema.org/a/IOOukARgdEeeDRsRnHYxSNbLx.png)](https://asciinema.org/a/IOOukARgdEeeDRsRnHYxSNbLx?autoplay=1&theme=solarized-dark&loop=true)
+![demo](https://github.com/hexdigest/gounit-vim/blob/master/demo.gif)
 
 ## Installation
 gounit-vim requires **gounit** to be available in your `$PATH`. Alternatively you can provide path to **gounit** using `g:gounit_bin` setting.
