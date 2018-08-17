@@ -34,8 +34,8 @@ You will also need to install all the necessary GoUnit binaries.
 It is easy to install by providing a command `:GoUnitInstallBinaries`, which will `go get` all the required binaries.
 
 ## Usage
-Call `:GoUnit` to generate test for function in current line (function declaration line) or functions in text selected in visual mode.
-Another example of usage is to give vim "range" parameter:
+Call `:GoUnit` to generate test for the function declaration in the current line or all functions selected in visual mode.
+`GoUnit` also understands "range" parameters:
 ```vim
 :5,10GoUnit     " genereate tests for functions from line 5 to line 10
 :.,$GoUnit      " from the current line till the end of the file
@@ -43,13 +43,15 @@ Another example of usage is to give vim "range" parameter:
 :%GoUnit        " generate tests for the whole file
 ```
 
+These commands generate tests using template that you set as a default with the `gounit template use <template>` command.
+Yet you can use all of the above commands followed by the name of the template: `:GoUnit minimock`
+If you have `wildmenu` option enabled you can pick desired template from the list of all registered templates with: `:GoUnit <TAB>`
+
 Also you can create useful maps to use it with [go-vim](https://github.com/fatih/vim-go) plugin for fast function tests generation.
 ```vim
 " maps your leader key + gt to generate tests for the function under your cursor
-nnnoremap <leader>gt :normal vaf<cr>:GoUnit<cr>
+nnoremap <leader>gt :normal vaf<cr>:GoUnit<cr>
 ```
-
-
 
 ## Settings
 If you want you can set path to your **gounit** binary if it's not in your path, for example:
