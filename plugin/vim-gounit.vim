@@ -167,66 +167,63 @@ endfunction
 """""""""""""""""""""""""""""""""""""""
 " plugin functionality
 if !exists('g:gounit_bin')
-    let g:gounit_bin = 'gounit'
+  let g:gounit_bin = 'gounit'
 endif
 
 function! s:Tests(...) range
-    let bin = g:gounit_bin
-    if !executable(bin)
-        echom 'gounit-vim: gounit binary not found.'
-        return
-    endif
+  let bin = g:gounit_bin
+  if !executable(bin)
+    echom 'gounit-vim: gounit binary not found.'
+    return
+  endif
 
-    let funcLine = 0
-    for lineno in range(a:firstline, a:lastline)
-        let funcName = matchstr(getline(lineno), '^func\s*\(([^)]\+)\)\=\s*\zs\w\+\ze(')
-        if funcName != ''
-            let funcLine = lineno
-        endif
-    endfor
-    if funcLine == 0
-        echom 'gounit-vim: No function selected!'
-        return
+  let funcLine = 0
+  for lineno in range(a:firstline, a:lastline)
+    let funcName = matchstr(getline(lineno), '^func\s*\(([^)]\+)\)\=\s*\zs\w\+\ze(')
+    if funcName != ''
+      let funcLine = lineno
     endif
+  endfor
+  if funcLine == 0
+    echom 'gounit-vim: No function selected!'
+    return
+  endif
 
-    " check if arguments were passed
-    " then checks if template exsits
-    " if everything is ok then template is being changed
-    " and next time GoUnit is used it will be used
-    if a:0
-      let l:res = ParseTemplResult()
-      let l:count = 0
-      for i in l:res
-        if i == a:1
-          let l:count += 1
-        endif
-      endfor
-      if !l:count
-        echo 'error no such template'
-        return -1
+  " check if arguments were passed
+  " then checks if template exsits
+  " if everything is ok then template is being changed
+  " and next time GoUnit is used it will be used
+  if a:0
+    let l:res = ParseTemplResult()
+    let l:count = 0
+    for i in l:res
+      if i == a:1
+        let l:count += 1
       endif
-      " runs a gounit command with a given template
-      call system(s:plugin_name . ' template use ' . a:1)
+    endfor
+    if !l:count
+      echo 'error no such template'
+      return -1
     endif
+    " runs a gounit command with a given template
+    call system(s:plugin_name . ' template use ' . a:1)
+  endif
 
-    let file = expand('%')
-    let out = system(bin . ' gen -l ' . shellescape(funcLine) . ' -i ' . shellescape(file))
-    if out != ''
-      echom 'gounit-vim: ' . out
-    else
-      echom 'gounit-vim: test successfully generated'
-    endif
+  let file = expand('%')
+  let out = system(bin . ' gen -l ' . shellescape(funcLine) . ' -i ' . shellescape(file))
+  if out != ''
+    echom 'gounit-vim: ' . out
+  else
+    echom 'gounit-vim: test successfully generated'
+  endif
 endfunction
-
-" command! -range GoUnit <line1>,<line2>call s:Tests()
-command! GoUnitInstallBinaries call s:GoUnitInstall()
 
 
 """""""""""""""""""""""""""""""""""""""
 " parsing result of a command template list
 " to find out what templates we can use
 " and return them as an array
-function! ParseTemplResult(...)
+function! s:ParseTemplResult(...)
   let l:templates = system(s:plugin_name . ' template list')
   let l:templates = split(l:templates, '\n')[1:]
   let l:result = []
@@ -244,16 +241,17 @@ function! ParseTemplResult(...)
   return l:result
 endfunction
 
+
 " defines new command with autocomplete functionlist
-function! TemplateCommands()
-  let l:result = ParseTemplResult()
-  command! -range -nargs=? -complete=customlist,ParseTemplResult GoUnit <line1>,<line2>call s:Tests(<f-args>)
+function! s:TemplateCommands()
+  let l:result = s:ParseTemplResult()
+  command! -range -nargs=? -complete=customlist,s:ParseTemplResult GoUnit <line1>,<line2>call s:Tests(<f-args>)
 endfunction
 
 
 " function checks all binaries and after that calls other init functions
 " for gounit plugin
-function! GoUnitInit()
+function! s:GoUnitInit()
   let s:plugin_name = 'gounit'
   if !executable('go')
     echohl Error | echomsg "go executable not found." | echohl None
@@ -263,14 +261,19 @@ function! GoUnitInit()
     echohl Error | echomsg "gounit is not installed" | echohl None
     return -1
   endif
-
-  call TemplateCommands()
 endfunction
+
 
 " Loads go-unit commands only for *.go files 
 augroup go-unit
 	autocmd BufEnter *.go 
-	\  if GoUnitInit() != 1
-	\|	call TemplateCommands()
+	\  if s:GoUnitInit() != -1
+	\|	call s:TemplateCommands()
 	\| endif
 augroup end
+
+
+" inits function to download gounit binaries
+command! GoUnitInstallBinaries call s:GoUnitInstall()
+
+" vim: sw=2 ts=2 et
