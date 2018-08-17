@@ -1,3 +1,15 @@
+" Binary installation for go-unit is copied from vim-go plugin
+" https://github.com/fatih/vim-go
+" https://github.com/fatih/vim-go/blob/master/plugin/go.vim
+"
+" https://github.com/fatih/vim-go/blob/master/LICENSE
+" Copyright (c) 2015, Fatih Arslan
+" All rights reserved.
+
+
+"""""""""""""""""""""""""""""""""""""""
+" Install binaries
+"
 " Run a shell command.
 "
 " It will temporary set the shell to /bin/sh for Unix-like systems if possible,
@@ -151,6 +163,7 @@ function! s:GoUnitInstall()
 	endif
 endfunction
 
+
 """""""""""""""""""""""""""""""""""""""
 " plugin functionality
 if !exists('g:gounit_bin')
@@ -209,6 +222,7 @@ endfunction
 command! GoUnitInstallBinaries call s:GoUnitInstall()
 
 
+"""""""""""""""""""""""""""""""""""""""
 " parsing result of a command template list
 " to find out what templates we can use
 " and return them as an array
@@ -241,12 +255,12 @@ endfunction
 " for gounit plugin
 function! GoUnitInit()
   let s:plugin_name = 'gounit'
-	if !executable('go')
-		echohl Error | echomsg "go executable not found." | echohl None
-		return -1
-	endif
+  if !executable('go')
+    echohl Error | echomsg "go executable not found." | echohl None
+    return -1
+  endif
   if !executable('gounit')
-		echohl Error | echomsg "gounit is not installed" | echohl None
+    echohl Error | echomsg "gounit is not installed" | echohl None
     return -1
   endif
 
