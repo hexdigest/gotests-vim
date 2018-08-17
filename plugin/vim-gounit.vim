@@ -267,4 +267,10 @@ function! GoUnitInit()
   call TemplateCommands()
 endfunction
 
-call GoUnitInit()
+" Loads go-unit commands only for *.go files 
+augroup go-unit
+	autocmd BufEnter *.go 
+	\  if GoUnitInit() != 1
+	\|	call TemplateCommands()
+	\| endif
+augroup end
