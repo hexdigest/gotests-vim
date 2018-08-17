@@ -45,7 +45,8 @@ Call `:GoUnit` to generate test for the function declaration in the current line
 
 These commands generate tests using template that you set as a default with the `gounit template use <template>` command.
 Yet you can use all of the above commands followed by the name of the template, i.e. `:GoUnit minimock`
-If you have `wildmenu` option enabled you can pick desired template from the list of all registered templates with `:GoUnit <TAB>`
+If you have `wildmenu` option enabled you can pick desired template from the list of all registered templates with `:GoUnit <TAB>`.
+Learn more about GoUnit templates [here](https://github.com/hexdigest/gounit#custom-test-templates).
 
 Also you can create useful maps to use it with [go-vim](https://github.com/fatih/vim-go) plugin for fast function tests generation.
 ```vim
