@@ -65,12 +65,12 @@ endfunction
 " commands are available.
 function! s:CheckBinaries()
   if !executable('go')
-    echohl Error | echomsg "vim-go: go executable not found." | echohl None
+    echohl Error | echomsg "go-unit: go executable not found." | echohl None
     return -1
   endif
 
   if !executable('git')
-    echohl Error | echomsg "vim-go: git executable not found." | echohl None
+    echohl Error | echomsg "go-unit: git executable not found." | echohl None
     return -1
   endif
 endfunction
