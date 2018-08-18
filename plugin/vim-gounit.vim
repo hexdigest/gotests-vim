@@ -126,37 +126,37 @@ endfunction
 
 " main download function for Go-unit
 function! s:GoUnitInstall()
-	if !executable('gounit')
-		" check if we can download and install gounit with go and git
-		let l:err = s:CheckBinaries()
-		if l:err != 0
-			return
-		endif
-		if s:DefaultPath() == ""
-			echohl Error
-			echomsg "vim.go: $GOPATH is not set and 'go env GOPATH' returns empty"
-			echohl None
-			return
-		endif
-		let l:go_bin_path = s:DefaultPath()
-		let l:pluginPath = 'github.com/hexdigest/gounit/cmd/gounit'
+  if !executable('gounit')
+  " check if we can download and install gounit with go and git
+  let l:err = s:CheckBinaries()
+  if l:err != 0
+    return
+  endif
+  if s:DefaultPath() == ""
+    echohl Error
+    echomsg "vim.go: $GOPATH is not set and 'go env GOPATH' returns empty"
+    echohl None
+    return
+  endif
+  let l:go_bin_path = s:DefaultPath()
+  let l:pluginPath = 'github.com/hexdigest/gounit/cmd/gounit'
 
-		" when shellslash is set on MS-* systems, shellescape puts single quotes
-		" around the output string. cmd on Windows does not handle single quotes
-		" correctly. Unsetting shellslash forces shellescape to use double quotes
-		" instead.
-		let l:resetshellslash = 0
-		if has('win32') && &shellslash
-			let l:resetshellslash = 1
-			set noshellslash
-		endif
+  " when shellslash is set on MS-* systems, shellescape puts single quotes
+  " around the output string. cmd on Windows does not handle single quotes
+  " correctly. Unsetting shellslash forces shellescape to use double quotes
+  " instead.
+  let l:resetshellslash = 0
+  if has('win32') && &shellslash
+    let l:resetshellslash = 1
+    set noshellslash
+  endif
 
-		echo "Go: ". "go-unit" ." not found. Installing ". pluginPath . " to folder " . go_bin_path
-		let l:run_cmd = ['go', 'get', '-u']
-		let [l:out, l:err] = s:ExecCmd(l:run_cmd + [l:pluginPath])
-		if l:err
-			echom "Error installing " . pluginPath . ": " . l:out
-		endif
+  echo "Go: ". "go-unit" ." not found. Installing ". pluginPath . " to folder " . go_bin_path
+  let l:run_cmd = ['go', 'get', '-u']
+  let [l:out, l:err] = s:ExecCmd(l:run_cmd + [l:pluginPath])
+  if l:err
+    echom "Error installing " . pluginPath . ": " . l:out
+  endif
     echo 'gounit installation is complete'
   else
     echo 'gounit is already installed'
@@ -194,19 +194,8 @@ function! s:Tests(...) range
   " if everything is ok then template is being changed
   " and next time GoUnit is used it will be used
   if a:0
-    let l:res = ParseTemplResult()
-    let l:count = 0
-    for i in l:res
-      if i == a:1
-        let l:count += 1
-      endif
-    endfor
-    if !l:count
-      echo 'error no such template'
-      return -1
-    endif
-    " runs a gounit command with a given template
-    call system(s:plugin_name . ' template use ' . a:1)
+    let g:lol = "worked"
+    call s:TemplateUse(a:1)
   endif
 
   let file = expand('%')
@@ -218,6 +207,44 @@ function! s:Tests(...) range
   endif
 endfunction
 
+" TemplateUse is used to set template for go-unit by its name
+function! s:TemplateUse(tmpl_name)
+  let l:res = s:ParseTemplResult()
+  let l:count = 0
+  for i in l:res
+    if i == a:tmpl_name
+      let l:count += 1
+    endif
+  endfor
+  if !l:count
+    echo 'gounit-vim: error no such template'
+    return -1
+  endif
+  " runs a gounit command with a given template
+  call system(s:plugin_name . ' template use ' . a:tmpl_name)
+  echom "gounit-vim: template has been changed to " . a:tmpl_name
+endfunction
+
+" simply removes template from the list of your templates
+function! s:TemplateDel(tmpl_name)
+  if a:tmpl_name == 'default'
+    echom 'gounit-vim: cannot delete default template'
+    return -1
+  endif
+  let l:res = s:ParseTemplResult()
+  let l:count = 0
+  for i in l:res
+    if i == a:tmpl_name
+      let l:count += 1
+    endif
+  endfor
+  if !l:count
+    echo 'gounit-vim: error no such template'
+    return -1
+  endif
+  call system(s:plugin_name . ' template remove ' . a:tmpl_name)
+  echom 'gounit-vim: ' . a:tmpl_name . ' template has been removed'
+endfunction
 
 """""""""""""""""""""""""""""""""""""""
 " parsing result of a command template list
@@ -241,18 +268,52 @@ function! s:ParseTemplResult(...)
   return l:result
 endfunction
 
+" adds new template file into gounit
+" if no arguments were passed it uses current buffer
+function! s:TemplateAdd(...)
+  if !a:0 
+    let l:filepath = expand('%:p')
+  else
+    let l:filepath = a:1
+    if !filereadable(l:filepath)
+      echo 'gounit-vim: ' . l:filepath . ' is not found'
+      return -1
+    endif
+  endif
+  let l:callResult = system(s:plugin_name . ' template add ' . l:filepath)
+  if l:callResult != ""
+    echo l:callResult
+  else
+    echom 'gounit-vim: ' . split(l:filepath, '\/')[-1] . ' template has been added to your gounit list'
+  endif
+endfunction
+
+" function calls template list command and lists all installed
+" templates, current template is marked by * symbol 
+function! s:TemplateList()
+  let l:templates = system(s:plugin_name . ' template list')
+  let l:templates = split(l:templates, '\n')[1:]
+  echom 'gounit-vim: list of installed templates'
+  for i in l:templates
+    echo i
+  endfor
+endfunction
 
 " defines new command with autocomplete functionlist
 function! s:TemplateCommands()
   let l:result = s:ParseTemplResult()
   command! -range -nargs=? -complete=customlist,s:ParseTemplResult GoUnit <line1>,<line2>call s:Tests(<f-args>)
+  command! -nargs=1 -complete=customlist,s:ParseTemplResult GoUnitTemplateDel call s:TemplateDel(<f-args>)
+  command! -nargs=1 -complete=customlist,s:ParseTemplResult GoUnitTemplateUse call s:TemplateUse(<f-args>)
+  command! -nargs=? GoUnitTemplateAdd call s:TemplateAdd(<f-args>)
+  command! GoUnitTemplateList call s:TemplateList()
+  " TODO: TemplateEdit
 endfunction
 
 
 " function checks all binaries and after that calls other init functions
 " for gounit plugin
 function! s:GoUnitInit()
-  let s:plugin_name = 'gounit'
   if !executable('go')
     echohl Error | echomsg "go executable not found." | echohl None
     return -1
@@ -263,6 +324,7 @@ function! s:GoUnitInit()
   endif
 endfunction
 
+let s:plugin_name = 'gounit'
 
 " Loads go-unit commands only for *.go files 
 augroup go-unit
