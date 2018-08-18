@@ -314,7 +314,7 @@ endfunction
 
 " function checks all binaries and after that calls other init functions
 " for gounit plugin
-function! s:GoUnitInit()
+function! s:GoUnitCheck()
   if !executable('go')
     echohl Error | echomsg "go executable not found." | echohl None
     return -1
@@ -329,14 +329,20 @@ let s:plugin_name = 'gounit'
 
 " Loads go-unit commands only for *.go files 
 augroup go-unit
-	autocmd BufEnter *.go 
-	\  if s:GoUnitInit() != -1
+	autocmd BufNewFile *.go 
+	\  if s:GoUnitCheck() != -1
+	\|	call s:AddUnitCommand()
+	\| endif
+	autocmd BufRead *.go 
+	\  if s:GoUnitCheck() != -1
 	\|	call s:AddUnitCommand()
 	\| endif
 augroup end
 
 " create template cmds
-call s:TemplateCommands()
+if s:GoUnitCheck() != 1
+  call s:TemplateCommands()
+endif
 
 " inits function to download gounit binaries
 command! GoUnitInstallBinaries call s:GoUnitInstall()
