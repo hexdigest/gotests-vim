@@ -194,7 +194,6 @@ function! s:Tests(...) range
   " if everything is ok then template is being changed
   " and next time GoUnit is used it will be used
   if a:0
-    let g:lol = "worked"
     call s:TemplateUse(a:1)
   endif
 
@@ -302,14 +301,16 @@ endfunction
 " defines new command with autocomplete functionlist
 function! s:TemplateCommands()
   let l:result = s:ParseTemplResult()
-  command! -range -nargs=? -complete=customlist,s:ParseTemplResult GoUnit <line1>,<line2>call s:Tests(<f-args>)
   command! -nargs=1 -complete=customlist,s:ParseTemplResult GoUnitTemplateDel call s:TemplateDel(<f-args>)
   command! -nargs=1 -complete=customlist,s:ParseTemplResult GoUnitTemplateUse call s:TemplateUse(<f-args>)
-  command! -nargs=? GoUnitTemplateAdd call s:TemplateAdd(<f-args>)
+  command! -nargs=? -complete=file GoUnitTemplateAdd call s:TemplateAdd(<f-args>)
   command! GoUnitTemplateList call s:TemplateList()
   " TODO: TemplateEdit
 endfunction
 
+function! s:AddUnitCommand()
+  command! -range -buffer -nargs=? -complete=customlist,s:ParseTemplResult GoUnit <line1>,<line2>call s:Tests(<f-args>)
+endfunction
 
 " function checks all binaries and after that calls other init functions
 " for gounit plugin
@@ -330,10 +331,12 @@ let s:plugin_name = 'gounit'
 augroup go-unit
 	autocmd BufEnter *.go 
 	\  if s:GoUnitInit() != -1
-	\|	call s:TemplateCommands()
+	\|	call s:AddUnitCommand()
 	\| endif
 augroup end
 
+" create template cmds
+call s:TemplateCommands()
 
 " inits function to download gounit binaries
 command! GoUnitInstallBinaries call s:GoUnitInstall()
