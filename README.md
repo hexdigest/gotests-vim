@@ -43,12 +43,22 @@ Call `:GoUnit` to generate test for the function declaration in the current line
 :%GoUnit        " generate tests for the whole file
 ```
 
-These commands generate tests using template that you set as a default with the `gounit template use <template>` command.
-Yet you can use all of the above commands followed by the name of the template, i.e. `:GoUnit minimock`
+These commands generate tests using template that you set as a preferred with the `:GoUnitTemplateUse <template>` command.
+If you don't want to change your preferred template you can use all of the above commands followed by the name of the template, i.e. `:GoUnit minimock`
 If you have `wildmenu` option enabled you can pick desired template from the list of all registered templates with `:GoUnit <TAB>`.
-Learn more about GoUnit templates [here](https://github.com/hexdigest/gounit#custom-test-templates).
 
-Also you can create useful maps to use it with [vim-go](https://github.com/fatih/vim-go) plugin for fast function tests generation.
+## Managing templates
+
+There are few commands to manage your test templates:
+```vim
+:GoUnitTemplateAdd             " register contents of the current buffer as a new templates
+:GoUnitTemplateAdd /file/name  " register /file/name as new template
+:GoUnitTemplateDel template    " remove template
+:GoUnitTemplateList            " display all registered test templates
+:GoUnitTemplateUse template    " set template as preferred
+```
+
+Also you can create useful maps to use it with [vim-go](https://github.com/fatih/vim-go) plugin for fast test generation.
 ```vim
 " maps your leader key + gt to generate tests for the function under your cursor
 nnoremap <leader>gt :normal vaf<cr>:GoUnit<cr>
