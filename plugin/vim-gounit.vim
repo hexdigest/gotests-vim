@@ -16,7 +16,6 @@
 " needed by the user with GoUnitInstallBinaries
 let s:packages = {
   \ 'gounit':        ['github.com/hexdigest/gounit/cmd/gounit'],
-  \ 'motion':        ['github.com/fatih/motion'],
 \ }
 
 " It will temporary set the shell to /bin/sh for Unix-like systems if possible,
@@ -136,7 +135,7 @@ function! s:GoUnitInstall()
   let l:cmd = ['go', 'get', '-v']
   let final_msg = ""
 
-  if !executable('gounit') || !executable('motion')
+  if !executable('gounit')
     " check if we can download and install gounit with go and git
     let l:err = s:CheckBinaries()
     if l:err != 0
