@@ -12,6 +12,13 @@
 "
 " Run a shell command.
 "
+" these packages are used by gounit-vim and can be automatically installed if
+" needed by the user with GoUnitInstallBinaries
+let s:packages = {
+  \ 'gounit':        ['github.com/hexdigest/gounit/cmd/gounit'],
+  \ 'motion':        ['github.com/fatih/motion'],
+\ }
+
 " It will temporary set the shell to /bin/sh for Unix-like systems if possible,
 " so that we always use a standard POSIX-compatible Bourne shell (and not e.g.
 " csh, fish, etc.) See #988 and #1276.
@@ -126,20 +133,47 @@ endfunction
 
 " main download function for Go-unit
 function! s:GoUnitInstall()
-  if !executable('gounit')
-  " check if we can download and install gounit with go and git
-  let l:err = s:CheckBinaries()
-  if l:err != 0
-    return
+  let l:cmd = ['go', 'get', '-v']
+  let final_msg = ""
+
+  if !executable('gounit') || !executable('motion')
+    " check if we can download and install gounit with go and git
+    let l:err = s:CheckBinaries()
+    if l:err != 0
+      return
+    endif
+    if s:DefaultPath() == ""
+      echohl Error
+      echomsg "gounit-vim: $GOPATH is not set and 'go env GOPATH' returns empty"
+      echohl None
+      return
+    endif
+    let l:final_msg = "binaries"
+  else 
+    " otherwise we use this to update plugins
+    let l:cmd += ['-u']
+    let final_msg = "updates"
+    echomsg "gounit-vim: updating gounit tools."
   endif
-  if s:DefaultPath() == ""
-    echohl Error
-    echomsg "vim.go: $GOPATH is not set and 'go env GOPATH' returns empty"
-    echohl None
-    return
-  endif
+
   let l:go_bin_path = s:DefaultPath()
-  let l:pluginPath = 'github.com/hexdigest/gounit/cmd/gounit'
+  " let l:pluginPath = 'github.com/hexdigest/gounit/cmd/gounit'
+
+
+  " Filter packages from arguments (if any).
+  let l:packages = {}
+  if a:0 > 0
+    for l:bin in a:000
+      let l:pkg = get(s:packages, l:bin, [])
+      if len(l:pkg) == 0
+        echoerr 'unknown binary: ' . l:bin
+        return
+      endif
+      let l:packages[l:bin] = l:pkg
+    endfor
+  else
+    let l:packages = s:packages
+  endif
 
   " when shellslash is set on MS-* systems, shellescape puts single quotes
   " around the output string. cmd on Windows does not handle single quotes
@@ -151,16 +185,34 @@ function! s:GoUnitInstall()
     set noshellslash
   endif
 
-  echo "Go: ". "go-unit" ." not found. Installing ". pluginPath . " to folder " . go_bin_path
-  let l:run_cmd = ['go', 'get', '-u']
-  let [l:out, l:err] = s:ExecCmd(l:run_cmd + [l:pluginPath])
-  if l:err
-    echom "Error installing " . pluginPath . ": " . l:out
+  for [binary, pkg] in items(l:packages)
+    let l:importPath = pkg[0]
+
+    let l:run_cmd = copy(l:cmd)
+    if len(l:pkg) > 1 && get(l:pkg[1], l:platform, '') isnot ''
+      let l:run_cmd += get(l:pkg[1], l:platform, '')
+    endif
+
+    let binname = "go_" . binary . "_bin"
+
+    let bin = binary
+    if exists("g:{binname}")
+      let bin = g:{binname}
+    endif
+
+    if !executable(bin) 
+      echo "gounit-vim: ". binary ." not found. Installing ". importPath . " to folder " . go_bin_path
+
+      let [l:out, l:err] = s:ExecCmd(l:run_cmd + [l:importPath])
+      if l:err
+        echom "Error installing " . l:importPath . ": " . l:out
+      endif
+    endif
+  endfor
+  echom "gounit-vim: all " . final_msg . " have been installed."
+  if &filetype == "go"
+    call s:AddUnitCommand()
   endif
-    echo 'gounit installation is complete'
-  else
-    echo 'gounit is already installed'
-	endif
 endfunction
 
 
@@ -208,6 +260,10 @@ endfunction
 
 " TemplateUse is used to set template for go-unit by its name
 function! s:TemplateUse(tmpl_name)
+  if !executable('gounit')
+    echom 'gounit-vim: gounit binary not found.'
+    return
+  endif
   let l:res = s:ParseTemplResult()
   let l:count = 0
   for i in l:res
@@ -226,6 +282,10 @@ endfunction
 
 " simply removes template from the list of your templates
 function! s:TemplateDel(tmpl_name)
+  if !executable('gounit')
+    echom 'gounit-vim: gounit binary not found.'
+    return
+  endif
   if a:tmpl_name == 'default'
     echom 'gounit-vim: cannot delete default template'
     return -1
@@ -270,6 +330,10 @@ endfunction
 " adds new template file into gounit
 " if no arguments were passed it uses current buffer
 function! s:TemplateAdd(...)
+  if !executable('gounit')
+    echom 'gounit-vim: gounit binary not found.'
+    return
+  endif
   if !a:0 
     let l:filepath = expand('%:p')
   else
@@ -290,6 +354,10 @@ endfunction
 " function calls template list command and lists all installed
 " templates, current template is marked by * symbol 
 function! s:TemplateList()
+  if !executable('gounit')
+    echom 'gounit-vim: gounit binary not found.'
+    return
+  endif
   let l:templates = system(s:plugin_name . ' template list')
   let l:templates = split(l:templates, '\n')[1:]
   echom 'gounit-vim: list of installed templates'
@@ -316,11 +384,9 @@ endfunction
 " for gounit plugin
 function! s:GoUnitCheck()
   if !executable('go')
-    echohl Error | echomsg "go executable not found." | echohl None
     return -1
   endif
   if !executable('gounit')
-    echohl Error | echomsg "gounit is not installed" | echohl None
     return -1
   endif
 endfunction
